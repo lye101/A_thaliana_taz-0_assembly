@@ -1,0 +1,390 @@
+rule all:
+    input:
+        # Assemblies vs reference
+        flye_vs_ref_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_ref/flye_vs_ref.png",
+        lja_vs_ref_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/lja_vs_ref/lja_vs_ref.png",
+        #hifiasm_vs_ref_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_ref/hifiasm_vs_ref.png",
+        # Assemblies vs assemblies
+        #flye_vs_hifiasm_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_hifiasm/flye_vs_hifiasm.png",
+        flye_vs_lja_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_lja/flye_vs_lja.png"
+        #hifiasm_vs_lja_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_lja/hifiasm_vs_lja.png"
+
+
+# ========================================
+# PART 1: Assemblies vs Reference
+# ========================================
+
+rule nucmer_flye_vs_ref:
+    input:
+        reference="/data/courses/assembly-annotation-course/references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa",
+        assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta"
+    output:
+        delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_ref/flye_vs_ref.delta"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_ref",
+        prefix="flye_vs_ref"
+    resources:
+        time="04:00:00",
+        mem_mb=64000
+    threads: 8
+    container:
+        "/containers/apptainer/mummer4_gnuplot.sif"
+    shell:
+        """
+        mkdir -p {params.outdir}
+        cd {params.outdir}
+        
+        nucmer \
+            --prefix={params.prefix} \
+            --breaklen=1000 \
+            --mincluster=1000 \
+            {input.reference} \
+            {input.assembly}
+        """
+
+
+rule mummerplot_flye_vs_ref:
+    input:
+        delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_ref/flye_vs_ref.delta",
+        reference="/data/courses/assembly-annotation-course/references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa",
+        assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta"
+    output:
+        plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_ref/flye_vs_ref.png"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_ref",
+        prefix="flye_vs_ref"
+    resources:
+        time="01:00:00",
+        mem_mb=16000
+    threads: 1
+    container:
+        "/containers/apptainer/mummer4_gnuplot.sif"
+    shell:
+        """
+        cd {params.outdir}
+        
+        mummerplot \
+            -R {input.reference} \
+            -Q {input.assembly} \
+            --filter \
+            -t png \
+            --large \
+            --layout \
+            --fat \
+            --prefix={params.prefix} \
+            {input.delta}
+        """
+
+
+rule nucmer_hifiasm_vs_ref:
+    input:
+        reference="/data/courses/assembly-annotation-course/references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa",
+        assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/hifiasm/ERR11437344.asm.bp.p_ctg.fa"
+    output:
+        delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_ref/hifiasm_vs_ref.delta"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_ref",
+        prefix="hifiasm_vs_ref"
+    resources:
+        time="04:00:00",
+        mem_mb=64000
+    threads: 8
+    container:
+        "/containers/apptainer/mummer4_gnuplot.sif"
+    shell:
+        """
+        mkdir -p {params.outdir}
+        cd {params.outdir}
+        
+        nucmer \
+            --prefix={params.prefix} \
+            --breaklen=1000 \
+            --mincluster=1000 \
+            {input.reference} \
+            {input.assembly}
+        """
+
+
+rule mummerplot_hifiasm_vs_ref:
+    input:
+        delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_ref/hifiasm_vs_ref.delta",
+        reference="/data/courses/assembly-annotation-course/references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa",
+        assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/hifiasm/ERR11437344.asm.bp.p_ctg.fa"
+    output:
+        plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_ref/hifiasm_vs_ref.png"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_ref",
+        prefix="hifiasm_vs_ref"
+    resources:
+        time="01:00:00",
+        mem_mb=16000
+    threads: 1
+    container:
+        "/containers/apptainer/mummer4_gnuplot.sif"
+    shell:
+        """
+        cd {params.outdir}
+        
+        mummerplot \
+            -R {input.reference} \
+            -Q {input.assembly} \
+            --filter \
+            -t png \
+            --large \
+            --layout \
+            --fat \
+            --prefix={params.prefix} \
+            {input.delta}
+        """
+
+
+rule nucmer_lja_vs_ref:
+    input:
+        reference="/data/courses/assembly-annotation-course/references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa",
+        assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/LJA/assembly.fasta"
+    output:
+        delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/lja_vs_ref/lja_vs_ref.delta"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/lja_vs_ref",
+        prefix="lja_vs_ref"
+    resources:
+        time="04:00:00",
+        mem_mb=64000
+    threads: 8
+    container:
+        "/containers/apptainer/mummer4_gnuplot.sif"
+    shell:
+        """
+        mkdir -p {params.outdir}
+        cd {params.outdir}
+        
+        nucmer \
+            --prefix={params.prefix} \
+            --breaklen=1000 \
+            --mincluster=1000 \
+            {input.reference} \
+            {input.assembly}
+        """
+
+
+rule mummerplot_lja_vs_ref:
+    input:
+        delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/lja_vs_ref/lja_vs_ref.delta",
+        reference="/data/courses/assembly-annotation-course/references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa",
+        assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/LJA/assembly.fasta"
+    output:
+        plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/lja_vs_ref/lja_vs_ref.png"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/lja_vs_ref",
+        prefix="lja_vs_ref"
+    resources:
+        time="01:00:00",
+        mem_mb=16000
+    threads: 1
+    container:
+        "/containers/apptainer/mummer4_gnuplot.sif"
+    shell:
+        """
+        cd {params.outdir}
+        
+        mummerplot \
+            -R {input.reference} \
+            -Q {input.assembly} \
+            --filter \
+            -t png \
+            --large \
+            --layout \
+            --fat \
+            --prefix={params.prefix} \
+            {input.delta}
+        """
+
+
+# ========================================
+# PART 2: Assemblies vs Assemblies
+# ========================================
+
+rule nucmer_flye_vs_hifiasm:
+    input:
+        ref_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta",
+        query_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/hifiasm/ERR11437344.asm.bp.p_ctg.fa"
+    output:
+        delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_hifiasm/flye_vs_hifiasm.delta"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_hifiasm",
+        prefix="flye_vs_hifiasm"
+    resources:
+        time="04:00:00",
+        mem_mb=64000
+    threads: 8
+    container:
+        "/containers/apptainer/mummer4_gnuplot.sif"
+    shell:
+        """
+        mkdir -p {params.outdir}
+        cd {params.outdir}
+        
+        nucmer \
+            --prefix={params.prefix} \
+            --breaklen=1000 \
+            --mincluster=1000 \
+            {input.ref_assembly} \
+            {input.query_assembly}
+        """
+
+
+rule mummerplot_flye_vs_hifiasm:
+    input:
+        delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_hifiasm/flye_vs_hifiasm.delta",
+        ref_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta",
+        query_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/hifiasm/ERR11437344.asm.bp.p_ctg.fa"
+    output:
+        plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_hifiasm/flye_vs_hifiasm.png"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_hifiasm",
+        prefix="flye_vs_hifiasm"
+    resources:
+        time="01:00:00",
+        mem_mb=16000
+    threads: 1
+    container:
+        "/containers/apptainer/mummer4_gnuplot.sif"
+    shell:
+        """
+        cd {params.outdir}
+        
+        mummerplot \
+            -R {input.ref_assembly} \
+            -Q {input.query_assembly} \
+            --filter \
+            -t png \
+            --large \
+            --layout \
+            --fat \
+            --prefix={params.prefix} \
+            {input.delta}
+        """
+
+
+rule nucmer_flye_vs_lja:
+    input:
+        ref_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta",
+        query_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/LJA/assembly.fasta"
+    output:
+        delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_lja/flye_vs_lja.delta"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_lja",
+        prefix="flye_vs_lja"
+    resources:
+        time="04:00:00",
+        mem_mb=64000
+    threads: 8
+    container:
+        "/containers/apptainer/mummer4_gnuplot.sif"
+    shell:
+        """
+        mkdir -p {params.outdir}
+        cd {params.outdir}
+        
+        nucmer \
+            --prefix={params.prefix} \
+            --breaklen=1000 \
+            --mincluster=1000 \
+            {input.ref_assembly} \
+            {input.query_assembly}
+        """
+
+
+rule mummerplot_flye_vs_lja:
+    input:
+        delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_lja/flye_vs_lja.delta",
+        ref_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta",
+        query_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/LJA/assembly.fasta"
+    output:
+        plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_lja/flye_vs_lja.png"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_lja",
+        prefix="flye_vs_lja"
+    resources:
+        time="01:00:00",
+        mem_mb=16000
+    threads: 1
+    container:
+        "/containers/apptainer/mummer4_gnuplot.sif"
+    shell:
+        """
+        cd {params.outdir}
+        
+        mummerplot \
+            -R {input.ref_assembly} \
+            -Q {input.query_assembly} \
+            --filter \
+            -t png \
+            --large \
+            --layout \
+            --fat \
+            --prefix={params.prefix} \
+            {input.delta}
+        """
+
+
+rule nucmer_hifiasm_vs_lja:
+    input:
+        ref_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/hifiasm/ERR11437344.asm.bp.p_ctg.fa",
+        query_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/LJA/assembly.fasta"
+    output:
+        delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_lja/hifiasm_vs_lja.delta"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_lja",
+        prefix="hifiasm_vs_lja"
+    resources:
+        time="04:00:00",
+        mem_mb=64000
+    threads: 8
+    container:
+        "/containers/apptainer/mummer4_gnuplot.sif"
+    shell:
+        """
+        mkdir -p {params.outdir}
+        cd {params.outdir}
+        
+        nucmer \
+            --prefix={params.prefix} \
+            --breaklen=1000 \
+            --mincluster=1000 \
+            {input.ref_assembly} \
+            {input.query_assembly}
+        """
+
+
+rule mummerplot_hifiasm_vs_lja:
+    input:
+        delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_lja/hifiasm_vs_lja.delta",
+        ref_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/hifiasm/ERR11437344.asm.bp.p_ctg.fa",
+        query_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/LJA/assembly.fasta"
+    output:
+        plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_lja/hifiasm_vs_lja.png"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_lja",
+        prefix="hifiasm_vs_lja"
+    resources:
+        time="01:00:00",
+        mem_mb=16000
+    threads: 1
+    container:
+        "/containers/apptainer/mummer4_gnuplot.sif"
+    shell:
+        """
+        cd {params.outdir}
+        
+        mummerplot \
+            -R {input.ref_assembly} \
+            -Q {input.query_assembly} \
+            --filter \
+            -t png \
+            --large \
+            --layout \
+            --fat \
+            --prefix={params.prefix} \
+            {input.delta}
+        """
