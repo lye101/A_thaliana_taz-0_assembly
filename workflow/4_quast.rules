@@ -1,0 +1,75 @@
+
+rule all:
+    input:
+        with_references="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/quast/quast_with_refs.flag",
+        without_references="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/quast/quast_no_refs.flag"
+
+
+
+rule quast_with_references:
+    input: 
+        flye="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta",
+        lja="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/LJA/assembly.fasta",
+        dna="/data/courses/assembly-annotation-course/references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa",
+        gff3="/data/courses/assembly-annotation-course/references/Arabidopsis_thaliana.TAIR10.57.gff3"
+        #trinity_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/finished_trinity.flag",
+    output:
+        flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/quast/quast_with_refs.flag"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/quast"
+    resources:
+        time="02:00:00",
+        mem_mb=64000
+    threads: 16
+    container:
+        "/containers/apptainer/quast_5.2.0.sif"
+    shell:
+        """
+        mkdir -p {params.outdir}
+
+        quast.py \
+            -o "{params.outdir}/with_reference" \
+            --eukaryote \
+            --large \
+            --est-ref-size 135000000 \
+            --threads {threads} \
+            --labels Flye,LJA \
+            --no-sv \
+            -r {input.dna} \
+            --features {input.gff3} \
+            {input.flye} {input.lja}
+
+        touch {output.flag}
+        """
+
+rule quast_without_references:
+    input: 
+        flye="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta",
+        lja="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/LJA/assembly.fasta",
+        #trinity_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/finished_trinity.flag",
+    output:
+        flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/quast/quast_no_refs.flag"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/quast"
+    resources:
+        time="02:00:00",
+        mem_mb=64000
+    threads: 16
+    container:
+        "/containers/apptainer/quast_5.2.0.sif"
+    shell:
+        """
+        mkdir -p {params.outdir}
+
+        quast.py \
+            -o "{params.outdir}/no_reference" \
+            --eukaryote \
+            --large \
+            --est-ref-size 135000000 \
+            --threads {threads} \
+            --labels Flye,LJA \
+            --no-sv \
+            {input.flye} {input.lja}
+
+        touch {output.flag}
+        """
