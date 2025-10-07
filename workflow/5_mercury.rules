@@ -1,0 +1,106 @@
+rule all:
+    input:
+        flye_qv="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/flye/flye.qv",
+        lja_qv="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/lja/lja.qv"
+        #hifiasm_qv="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/hifiasm/hifiasm.qv",
+
+
+
+rule build_meryl_db:
+    input:
+        reads="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/Taz-0/ERR11437344.fastq.gz"
+    output:
+        db=directory("/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/meryl_db")
+    resources:
+        time="04:00:00",
+        mem_mb=64000
+    threads: 8
+    container:
+        "/containers/apptainer/merqury_1.3.sif"
+    shell:
+        """
+        export MERQURY=/usr/local/share/merqury
+        
+        meryl k=21 count {input.reads} output {output.db}
+        """
+
+
+rule merqury_flye:
+    input:
+        db="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/meryl_db",
+        assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta"
+    output:
+        qv="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/flye/flye.qv",
+        completeness="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/flye/flye.completeness.stats"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/flye",
+        prefix="flye"
+    resources:
+        time="04:00:00",
+        mem_mb=32000
+    threads: 8
+    container:
+        "/containers/apptainer/merqury_1.3.sif"
+    shell:
+        """
+        export MERQURY=/usr/local/share/merqury
+        
+        mkdir -p {params.outdir}
+        cd {params.outdir}
+        
+        merqury.sh {input.db} {input.assembly} {params.prefix}
+        """
+
+
+rule merqury_hifiasm:
+    input:
+        db="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/meryl_db",
+        assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/hifiasm/ERR11437344.asm.bp.p_ctg.fa"
+    output:
+        qv="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/hifiasm/hifiasm.qv",
+        completeness="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/hifiasm/hifiasm.completeness.stats"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/hifiasm",
+        prefix="hifiasm"
+    resources:
+        time="04:00:00",
+        mem_mb=32000
+    threads: 8
+    container:
+        "/containers/apptainer/merqury_1.3.sif"
+    shell:
+        """
+        export MERQURY=/usr/local/share/merqury
+        
+        mkdir -p {params.outdir}
+        cd {params.outdir}
+        
+        merqury.sh {input.db} {input.assembly} {params.prefix}
+        """
+
+
+rule merqury_lja:
+    input:
+        db="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/meryl_db",
+        assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/LJA/assembly.fasta"
+    output:
+        qv="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/lja/lja.qv",
+        completeness="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/lja/lja.completeness.stats"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/lja",
+        prefix="lja"
+    resources:
+        time="04:00:00",
+        mem_mb=32000
+    threads: 8
+    container:
+        "/containers/apptainer/merqury_1.3.sif"
+    shell:
+        """
+        export MERQURY=/usr/local/share/merqury
+        
+        mkdir -p {params.outdir}
+        cd {params.outdir}
+        
+        merqury.sh {input.db} {input.assembly} {params.prefix}
+        """
