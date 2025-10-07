@@ -1,0 +1,165 @@
+#configfile: "/data/users/ltucker/A_thaliana_Taz-0_assembly/config.yaml"
+
+rule all:
+    input: 
+        fastqc="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_fastqc.txt",
+        rna_fast_p="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_rna_fast_p.txt",
+        fast_qc_on_rna_fastp_trimmed="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_fastqc_on_rna_fastp.txt",
+        fastp_pacbio_stats="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_pacbio_dna_fastp.txt",
+        jellyfish_kmer_evaluation="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_jellyfish_kmer.txt"
+
+rule get_data:
+    output:
+        flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/.got_rna_and_dna"
+    shell:
+        """
+        mkdir -p /data/users/ltucker/A_thaliana_Taz-0_assembly/input_data
+
+        ln -s /data/courses/assembly-annotation-course/raw_data/Taz-0 /data/users/ltucker/A_thaliana_Taz-0_assembly/input_data && 
+        ln -s ln -s /data/courses/assembly-annotation-course/raw_data/RNAseq_Sha /data/users/ltucker/A_thaliana_Taz-0_assembly/input_data && 
+        touch {output.flag}
+        """
+
+
+
+rule fast_qc:
+    input:
+        get_data_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/.got_rna_and_dna"
+    output:
+        flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_fastqc.txt"
+    threads: 4
+    container: 
+        "/containers/apptainer/fastqc-0.12.1.sif"
+    shell:
+        """
+        mkdir -p /data/users/ltucker/A_thaliana_Taz-0_assembly/output/read_qc
+
+        fastqc \
+            --threads {threads} \
+            /data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/Taz-0/* \
+            /data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/RNAseq_Sha/* \
+            -o /data/users/ltucker/A_thaliana_Taz-0_assembly/output/read_qc 
+        touch {output.flag}
+        """
+
+
+rule rna_fast_p_trimming:
+    input:
+        qc_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_fastqc.txt",
+        rna_seq_forward="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/RNAseq_Sha/ERR754081_1.fastq.gz",
+        rna_seq_reverse="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/RNAseq_Sha/ERR754081_2.fastq.gz"
+    output:
+        flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_rna_fast_p.txt",
+        cleaned_rna_seq_forward="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/rna_fastp_trimmed/fastp_ERR754081_1.fastq.gz",
+        cleaned_rna_seq_reverse="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/rna_fastp_trimmed/fastp_ERR754081_2.fastq.gz",
+        json="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/rna_fastp_trimmed/fast_p_ERR754081.json",
+        html="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/rna_fastp_trimmed/fast_p_ERR754081_1.html"
+    container:
+        "/containers/apptainer/fastp_0.24.1.sif"
+    shell:
+        """
+        fastp \
+            -i {input.rna_seq_forward} \
+            -I {input.rna_seq_reverse} \
+            -o {output.cleaned_rna_seq_forward} \
+            -O {output.cleaned_rna_seq_reverse} \
+            --json {output.json} \
+            --html {output.html}
+        touch {output.flag}
+        """
+
+
+rule fast_qc_on_rna_fastp_trimmed:
+    input:
+        get_data_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/.got_rna_and_dna",
+        rna_fastp_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_rna_fast_p.txt",
+        cleaned_rna_seq_forward="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/rna_fastp_trimmed/fastp_ERR754081_1.fastq.gz",
+        cleaned_rna_seq_reverse="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/rna_fastp_trimmed/fastp_ERR754081_2.fastq.gz"
+    output:
+        flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_fastqc_on_rna_fastp.txt"
+    threads: 4
+    container: 
+        "/containers/apptainer/fastqc-0.12.1.sif"
+    shell:
+        """
+        mkdir -p /data/users/ltucker/A_thaliana_Taz-0_assembly/output/rna_fastp_trimmed
+
+        fastqc \
+            --threads {threads} \
+            {input.cleaned_rna_seq_forward} \
+            {input.cleaned_rna_seq_reverse} \
+            -o /data/users/ltucker/A_thaliana_Taz-0_assembly/output/read_qc 
+        touch {output.flag}
+        """
+
+
+rule fastp_pacbio_stats:
+    input:
+        get_data_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/.got_rna_and_dna",
+        dna="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/Taz-0/ERR11437344.fastq.gz"
+    output:
+        reads="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/hifi_fastp_stats/ERR11437344_stats.fastq.gz",
+        html="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/hifi_fastp_stats/ERR11437344_report.html",
+        json="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/hifi_fastp_stats/ERR11437344_report.json",
+        flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_pacbio_dna_fastp.txt"
+    resources:
+        time="01:00:00",
+        mem_mb=8000
+    threads: 4
+    container:
+        "/containers/apptainer/fastp_0.24.1.sif"  # adjust to your fastp container
+    shell:
+        """
+        mkdir -p /data/users/ltucker/A_thaliana_Taz-0_assembly/output/hifi_fastp_stats
+        
+        fastp \
+            -i {input.dna} \
+            -o {output.reads} \
+            --thread {threads} \
+            --html {output.html} \
+            --json {output.json} \
+            --disable_adapter_trimming \
+            --disable_quality_filtering \
+            --disable_length_filtering
+            
+        touch {output.flag}
+        """
+
+
+rule jellyfish_kmer_evaluation:
+    input:
+        get_data_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/.got_rna_and_dna",
+        fastq_files="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/Taz-0/ERR11437344.fastq.gz"
+    output:
+        jellyfish_db="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/jellyfish/reads.jf",
+        histogram="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/jellyfish/reads.histo",
+        flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_jellyfish_kmer.txt"
+    params:
+        kmer_size=21,
+        hash_size="5G",
+        output_dir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/jellyfish"
+    threads: 8
+    resources:
+        mem_mb=60000
+    container: 
+        "/containers/apptainer/jellyfish-2.2.6--0.sif"
+    shell:
+        """
+        mkdir -p {params.output_dir}
+        
+        # C for Canonical value forwards and reverse k-mers are counted once
+        jellyfish count \
+            -C \
+            -m {params.kmer_size} \
+            -s {params.hash_size} \
+            -t {threads} \
+            -o {output.jellyfish_db} \
+            <(zcat {input.fastq_files})
+
+        # make k-mer histogram
+        jellyfish histo \
+            -t {threads} \
+            {output.jellyfish_db} > {output.histogram}
+        
+        touch {output.flag}
+        """
