@@ -1,0 +1,108 @@
+
+rule all:
+    input:
+        flye_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/finished_flye.flag",
+        hifiasm_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/finished_hifi.flag",
+        trinity_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/finished_trinity.flag",
+        LJA_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/finished_LJA.flag"
+
+
+rule flye_assembly:
+    input: 
+        "/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/Taz-0/ERR11437344.fastq.gz"
+    output:
+        "/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/finished_flye.flag"
+    resources:
+        time="1-00:00:00",
+        mem_mb=64000
+    threads: 16
+    container:
+        "/containers/apptainer/flye_2.9.5.sif"
+    shell:
+        """
+        mkdir -p /data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye
+        flye \
+            --threads {threads} \
+            --pacbio-hifi {input} \
+            --out-dir /data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye
+        
+        touch {output}
+        """
+
+# rule for awk to fasta awk '/^S/{print ">"$2;print $3}' "$OUTDIR/HiFias.asm.bp.p_ctg.gfa" > "$OUTDIR/HiFiasmPrimary.fa"            
+
+rule hifiasm_assembly:
+    input: 
+        "/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/Taz-0/ERR11437344.fastq.gz"
+    output:
+        "/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/finished_hifi.flag"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/hifiasm"
+    resources:
+        time="1-00:00:00",
+        mem_mb=128000
+    threads: 24
+    shell:
+        """
+        mkdir -p {params.outdir}
+
+        apptainer exec --bind /data /containers/apptainer/hifiasm_0.25.0.sif hifiasm \
+            -o "{params.outdir}/ERR11437344.asm" \
+            -t {threads} \
+            {input}
+        touch {output}
+        """
+
+rule LJA_assembly:
+    input:
+        "/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/Taz-0/ERR11437344.fastq.gz"
+    output:
+        "/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/finished_LJA.flag"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/LJA"
+    resources:
+        time="2-00:00:00",
+        mem_mb=120000
+    threads: 16
+    container:
+        "/containers/apptainer/lja-0.2.sif"
+    shell:
+        """
+        mkdir -p {params.outdir}
+        
+        lja -o {params.outdir} \
+                --reads {input} \
+                --threads {threads}
+
+        touch {output}
+        """
+
+rule trinity_assembly:
+    input:
+        forward_read="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/fastp_trimmed/cleaned_ERR754081_1.fastq.gz",
+        reverse_read="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/fastp_trimmed/cleaned_ERR754081_2.fastq.gz"
+    output:
+        "/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/finished_trinity.flag"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/trinity"
+    resources:
+        time="2-00:00:00",
+        mem_mb=120000
+    threads: 16
+    shell:
+        """
+        mkdir -p {params.outdir}
+
+        module load Trinity/2.15.1-foss-2021a
+        Trinity \
+            --seqType fq \
+            --left {input.forward_read} \
+            --right {input.reverse_read} \
+            --CPU {threads} \
+            --max_memory 64G \
+            --output {params.outdir}
+        
+
+        module unload Trinity/2.15.1-foss-2021a
+        touch {output}
+        """
