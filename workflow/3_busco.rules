@@ -1,0 +1,130 @@
+
+
+rule all:
+    input:
+        flye="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/busco/busco_on_fly.flag",
+        LJA="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/busco/busco_on_lja.flag",
+        trinity="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/busco/busco_on_trinity.flag"
+        # missing hifiasm
+
+# Run busco:
+#   Options:
+#   -i: Specifies the input file.
+#   -o: Gives the output folder a short name.
+#   --out_path: Sets the directory where the BUSCO output folder will be written.                  
+#   --mode: Specifies the input type (genome, proteins or transcriptome)                           
+#   --lineage: Points to the lineage-specific BUSCO dataset to use.                                
+#   --cpu: Number of CPU threads to use for the analysis. 
+
+rule busco_on_flye:
+    input: 
+        "/data/users/ltucker/A_thaliana_Taz-0_assembly/output/flye2/assembly.fasta"
+    output:
+        flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/busco/busco_on_fly.flag",
+        results=directory("/data/users/ltucker/A_thaliana_Taz-0_assembly/output/busco/busco_flye_results")
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/busco"
+    resources:
+        time="02:00:00",
+        mem_mb=64000
+    threads: 16
+    shell:
+        """
+        mkdir -p {params.outdir}
+        module add BUSCO/5.4.2-foss-2021a
+
+        busco \
+            -i {input} \
+            -o busco_flye_results \
+            --out_path {params.outdir} \
+            --mode genome \
+            --lineage brassicales_odb10 \
+            --cpu {threads}
+
+        touch {output.flag}
+        """
+
+
+rule busco_on_hifiasm:
+    input: 
+        "$WGSDIR/05_02_Hifiasm.bp.p_ctg.fa"
+    output:
+        flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/busco/busco_on_hifiasm.flag",
+        results=directory("/data/users/ltucker/A_thaliana_Taz-0_assembly/output/busco/busco_hifiasm_results")
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/busco"
+    resources:
+        time="02:00:00",
+        mem_mb=64000
+    threads: 16
+    shell:
+        """
+        mkdir -p {params.outdir}
+        module add BUSCO/5.4.2-foss-2021a
+
+        busco \
+            -i {input} \
+            -o busco_hifiasm_results \
+            --out_path {params.outdir} \
+            --mode genome \
+            --lineage brassicales_odb10 \
+            --cpu {threads}
+
+        touch {output.flag}
+        """
+
+rule busco_on_lja:
+    input: 
+        "/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/LJA/assembly.fasta"
+    output:
+        flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/busco/busco_on_lja.flag",
+        results=directory("/data/users/ltucker/A_thaliana_Taz-0_assembly/output/busco/busco_lja_results")
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/busco"
+    resources:
+        time="02:00:00",
+        mem_mb=64000
+    threads: 16
+    shell:
+        """
+        mkdir -p {params.outdir}
+        module add BUSCO/5.4.2-foss-2021a
+
+        busco \
+            -i {input} \
+            -o busco_LJA_results \
+            --out_path {params.outdir} \
+            --mode genome \
+            --lineage brassicales_odb10 \
+            --cpu {threads}
+
+        touch {output.flag}
+        """
+
+rule busco_on_trinity:
+    input: 
+        "/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/trinity.Trinity.fasta"
+    output:
+        flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/busco/busco_on_trinity.flag",
+        results="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/busco/busco_trinity_results"
+    params:
+        outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/busco"
+    resources:
+        time="02:00:00",
+        mem_mb=64000
+    threads: 16
+    shell:
+        """
+        mkdir -p {params.outdir}
+        module add BUSCO/5.4.2-foss-2021a
+
+        busco \
+            -i {input} \
+            -o busco_trinity_results \
+            --out_path {params.outdir} \
+            --mode transcriptome \
+            --lineage brassicales_odb10 \
+            --cpu {threads}
+
+        touch {output.flag}
+        """
