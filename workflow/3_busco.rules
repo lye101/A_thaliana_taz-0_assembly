@@ -1,5 +1,4 @@
-
-
+# Run BUSCO quality assessment on all assemblies
 rule all:
     input:
         flye="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/busco/busco_on_fly.flag",
@@ -7,7 +6,6 @@ rule all:
         trinity="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/busco/busco_on_trinity.flag"
         # missing hifiasm
 
-# Run busco:
 #   Options:
 #   -i: Specifies the input file.
 #   -o: Gives the output folder a short name.
@@ -16,6 +14,7 @@ rule all:
 #   --lineage: Points to the lineage-specific BUSCO dataset to use.                                
 #   --cpu: Number of CPU threads to use for the analysis. 
 
+# Assess completeness of Flye assembly
 rule busco_on_flye:
     input: 
         "/data/users/ltucker/A_thaliana_Taz-0_assembly/output/flye2/assembly.fasta"
@@ -33,6 +32,7 @@ rule busco_on_flye:
         mkdir -p {params.outdir}
         module add BUSCO/5.4.2-foss-2021a
 
+        # Check for conserved genes in Brassicales lineage
         busco \
             -i {input} \
             -o busco_flye_results \
@@ -45,6 +45,7 @@ rule busco_on_flye:
         """
 
 
+# Assess completeness of Hifiasm assembly
 rule busco_on_hifiasm:
     input: 
         "$WGSDIR/05_02_Hifiasm.bp.p_ctg.fa"
@@ -73,6 +74,7 @@ rule busco_on_hifiasm:
         touch {output.flag}
         """
 
+# Assess completeness of LJA assembly
 rule busco_on_lja:
     input: 
         "/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/LJA/assembly.fasta"
@@ -101,6 +103,7 @@ rule busco_on_lja:
         touch {output.flag}
         """
 
+# Assess completeness of Trinity transcriptome assembly
 rule busco_on_trinity:
     input: 
         "/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/trinity.Trinity.fasta"
@@ -118,6 +121,7 @@ rule busco_on_trinity:
         mkdir -p {params.outdir}
         module add BUSCO/5.4.2-foss-2021a
 
+        # Use transcriptome mode for RNA assembly
         busco \
             -i {input} \
             -o busco_trinity_results \

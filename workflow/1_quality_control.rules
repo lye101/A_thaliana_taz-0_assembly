@@ -1,5 +1,4 @@
-#configfile: "/data/users/ltucker/A_thaliana_Taz-0_assembly/config.yaml"
-
+# Main rule - runs all QC steps on the raw data
 rule all:
     input: 
         fastqc="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_fastqc.txt",
@@ -8,6 +7,7 @@ rule all:
         fastp_pacbio_stats="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_pacbio_dna_fastp.txt",
         jellyfish_kmer_evaluation="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_jellyfish_kmer.txt"
 
+# Set up symlinks to input data
 rule get_data:
     output:
         flag="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/.got_rna_and_dna"
@@ -15,13 +15,14 @@ rule get_data:
         """
         mkdir -p /data/users/ltucker/A_thaliana_Taz-0_assembly/input_data
 
+        # Link to the course data directories
         ln -s /data/courses/assembly-annotation-course/raw_data/Taz-0 /data/users/ltucker/A_thaliana_Taz-0_assembly/input_data && 
         ln -s ln -s /data/courses/assembly-annotation-course/raw_data/RNAseq_Sha /data/users/ltucker/A_thaliana_Taz-0_assembly/input_data && 
         touch {output.flag}
         """
 
 
-
+# Run FastQC on all raw reads
 rule fast_qc:
     input:
         get_data_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/.got_rna_and_dna"
@@ -34,6 +35,7 @@ rule fast_qc:
         """
         mkdir -p /data/users/ltucker/A_thaliana_Taz-0_assembly/output/read_qc
 
+        # Run QC on both DNA and RNA reads
         fastqc \
             --threads {threads} \
             /data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/Taz-0/* \
@@ -43,6 +45,7 @@ rule fast_qc:
         """
 
 
+# Trim and clean RNA-seq reads with fastp
 rule rna_fast_p_trimming:
     input:
         qc_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/.finished_fastqc.txt",
@@ -58,6 +61,7 @@ rule rna_fast_p_trimming:
         "/containers/apptainer/fastp_0.24.1.sif"
     shell:
         """
+        # Process paired-end RNA reads
         fastp \
             -i {input.rna_seq_forward} \
             -I {input.rna_seq_reverse} \
@@ -69,6 +73,7 @@ rule rna_fast_p_trimming:
         """
 
 
+# Check quality of trimmed RNA reads
 rule fast_qc_on_rna_fastp_trimmed:
     input:
         get_data_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/.got_rna_and_dna",
@@ -84,6 +89,7 @@ rule fast_qc_on_rna_fastp_trimmed:
         """
         mkdir -p /data/users/ltucker/A_thaliana_Taz-0_assembly/output/rna_fastp_trimmed
 
+        # Run FastQC on cleaned reads to verify improvement
         fastqc \
             --threads {threads} \
             {input.cleaned_rna_seq_forward} \
@@ -93,6 +99,7 @@ rule fast_qc_on_rna_fastp_trimmed:
         """
 
 
+# Get stats on PacBio HiFi reads without any filtering
 rule fastp_pacbio_stats:
     input:
         get_data_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/.got_rna_and_dna",
@@ -107,11 +114,12 @@ rule fastp_pacbio_stats:
         mem_mb=8000
     threads: 4
     container:
-        "/containers/apptainer/fastp_0.24.1.sif"  # adjust to your fastp container
+        "/containers/apptainer/fastp_0.24.1.sif"
     shell:
         """
         mkdir -p /data/users/ltucker/A_thaliana_Taz-0_assembly/output/hifi_fastp_stats
         
+        # Just generate stats, no trimming needed for HiFi reads
         fastp \
             -i {input.dna} \
             -o {output.reads} \
@@ -126,6 +134,7 @@ rule fastp_pacbio_stats:
         """
 
 
+# Count k-mers to estimate genome size and heterozygosity
 rule jellyfish_kmer_evaluation:
     input:
         get_data_done="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/.got_rna_and_dna",
@@ -147,7 +156,7 @@ rule jellyfish_kmer_evaluation:
         """
         mkdir -p {params.output_dir}
         
-        # C for Canonical value forwards and reverse k-mers are counted once
+        # Count k-mers (canonical means forward and reverse are counted as the same)
         jellyfish count \
             -C \
             -m {params.kmer_size} \
@@ -156,7 +165,7 @@ rule jellyfish_kmer_evaluation:
             -o {output.jellyfish_db} \
             <(zcat {input.fastq_files})
 
-        # make k-mer histogram
+        # Generate histogram from k-mer counts
         jellyfish histo \
             -t {threads} \
             {output.jellyfish_db} > {output.histogram}

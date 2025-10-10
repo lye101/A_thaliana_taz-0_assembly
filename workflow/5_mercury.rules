@@ -1,11 +1,12 @@
+# Run Merqury QV analysis on all assemblies
 rule all:
     input:
         flye_qv="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/flye/flye.qv",
         lja_qv="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/lja/lja.qv"
-        #hifiasm_qv="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/hifiasm/hifiasm.qv",
+        hifiasm_qv="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/hifiasm/hifiasm.qv",
 
 
-
+# Build k-mer database from reads for quality assessment
 rule build_meryl_db:
     input:
         reads="/data/users/ltucker/A_thaliana_Taz-0_assembly/input_data/Taz-0/ERR11437344.fastq.gz"
@@ -21,20 +22,22 @@ rule build_meryl_db:
         """
         export MERQURY=/usr/local/share/merqury
         
+        # Count k-mers with k=21 (standard size for accuracy evaluation)
         meryl k=21 count {input.reads} output {output.db}
         """
 
 
+# Evaluate Flye assembly quality using k-mer approach
 rule merqury_flye:
     input:
         db="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/meryl_db",
         assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta"
     output:
-        qv="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/flye/flye.qv",
+        qv="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/flye/flye.qv",  # Quality value (like Phred score)
         completeness="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/flye/flye.completeness.stats"
     params:
         outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/flye",
-        prefix="flye"
+        prefix="flye"  # Used to name all output files
     resources:
         time="04:00:00",
         mem_mb=32000
@@ -48,10 +51,12 @@ rule merqury_flye:
         mkdir -p {params.outdir}
         cd {params.outdir}
         
+        # Compare assembly k-mers against read k-mers to calculate accuracy
         merqury.sh {input.db} {input.assembly} {params.prefix}
         """
 
 
+# Evaluate Hifiasm assembly quality
 rule merqury_hifiasm:
     input:
         db="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/meryl_db",
@@ -79,6 +84,7 @@ rule merqury_hifiasm:
         """
 
 
+# Evaluate LJA assembly quality
 rule merqury_lja:
     input:
         db="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/merqury/meryl_db",

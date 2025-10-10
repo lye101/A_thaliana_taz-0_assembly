@@ -1,11 +1,11 @@
-
+# Run QUAST assembly evaluation both with and without reference genome
 rule all:
     input:
         with_references="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/quast/quast_with_refs.flag",
         without_references="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/out_flags/quast/quast_no_refs.flag"
 
 
-
+# Compare assemblies against the reference genome
 rule quast_with_references:
     input: 
         flye="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta",
@@ -27,21 +27,23 @@ rule quast_with_references:
         """
         mkdir -p {params.outdir}
 
+        # Run QUAST with reference genome and annotations for more detailed metrics
         quast.py \
             -o "{params.outdir}/with_reference" \
             --eukaryote \
             --large \
-            --est-ref-size 135000000 \
+            --est-ref-size 135000000 \ # a. thaliana genome size 
             --threads {threads} \
             --labels Flye,LJA \
-            --no-sv \
+            --no-sv \ # no structural variants is faster, but doesnt give strucutral variants
             -r {input.dna} \
-            --features {input.gff3} \
+            --features {input.gff3} \ # give genes and genomic features 
             {input.flye} {input.lja}
 
         touch {output.flag}
         """
 
+# Evaluate assemblies without reference for unbiased comparison
 rule quast_without_references:
     input: 
         flye="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta",
@@ -61,11 +63,12 @@ rule quast_without_references:
         """
         mkdir -p {params.outdir}
 
+        # Run QUAST without reference to get basic stats only
         quast.py \
             -o "{params.outdir}/no_reference" \
             --eukaryote \
             --large \
-            --est-ref-size 135000000 \
+            --est-ref-size 135000000 \ # a. thaliana genome size 
             --threads {threads} \
             --labels Flye,LJA \
             --no-sv \

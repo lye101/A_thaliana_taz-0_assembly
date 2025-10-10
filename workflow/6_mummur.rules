@@ -1,19 +1,21 @@
+# Compare assemblies to reference genome and to each other using nucmer/mummerplot
 rule all:
     input:
         # Assemblies vs reference
         flye_vs_ref_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_ref/flye_vs_ref.png",
         lja_vs_ref_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/lja_vs_ref/lja_vs_ref.png",
-        #hifiasm_vs_ref_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_ref/hifiasm_vs_ref.png",
+        hifiasm_vs_ref_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_ref/hifiasm_vs_ref.png",
         # Assemblies vs assemblies
         #flye_vs_hifiasm_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_hifiasm/flye_vs_hifiasm.png",
         flye_vs_lja_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_lja/flye_vs_lja.png"
-        #hifiasm_vs_lja_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_lja/hifiasm_vs_lja.png"
+        hifiasm_vs_lja_plot="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_lja/hifiasm_vs_lja.png"
 
 
 # ========================================
 # PART 1: Assemblies vs Reference
 # ========================================
 
+# Align Flye assembly to reference genome
 rule nucmer_flye_vs_ref:
     input:
         reference="/data/courses/assembly-annotation-course/references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa",
@@ -34,6 +36,7 @@ rule nucmer_flye_vs_ref:
         mkdir -p {params.outdir}
         cd {params.outdir}
         
+        # Run nucmer alignment
         nucmer \
             --prefix={params.prefix} \
             --breaklen=1000 \
@@ -43,6 +46,7 @@ rule nucmer_flye_vs_ref:
         """
 
 
+# Create dotplot visualization of Flye vs reference alignment
 rule mummerplot_flye_vs_ref:
     input:
         delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_ref/flye_vs_ref.delta",
@@ -63,6 +67,7 @@ rule mummerplot_flye_vs_ref:
         """
         cd {params.outdir}
         
+        # Generate dotplot from alignment
         mummerplot \
             -R {input.reference} \
             -Q {input.assembly} \
@@ -76,6 +81,7 @@ rule mummerplot_flye_vs_ref:
         """
 
 
+# Align Hifiasm assembly to reference genome
 rule nucmer_hifiasm_vs_ref:
     input:
         reference="/data/courses/assembly-annotation-course/references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa",
@@ -105,6 +111,7 @@ rule nucmer_hifiasm_vs_ref:
         """
 
 
+# Create dotplot for Hifiasm vs reference
 rule mummerplot_hifiasm_vs_ref:
     input:
         delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/hifiasm_vs_ref/hifiasm_vs_ref.delta",
@@ -138,6 +145,7 @@ rule mummerplot_hifiasm_vs_ref:
         """
 
 
+# Align LJA assembly to reference genome
 rule nucmer_lja_vs_ref:
     input:
         reference="/data/courses/assembly-annotation-course/references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa",
@@ -167,6 +175,7 @@ rule nucmer_lja_vs_ref:
         """
 
 
+# Create dotplot for LJA vs reference
 rule mummerplot_lja_vs_ref:
     input:
         delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/lja_vs_ref/lja_vs_ref.delta",
@@ -204,6 +213,7 @@ rule mummerplot_lja_vs_ref:
 # PART 2: Assemblies vs Assemblies
 # ========================================
 
+# Compare Flye and Hifiasm assemblies directly
 rule nucmer_flye_vs_hifiasm:
     input:
         ref_assembly="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye/assembly.fasta",
@@ -224,6 +234,7 @@ rule nucmer_flye_vs_hifiasm:
         mkdir -p {params.outdir}
         cd {params.outdir}
         
+        # Align two assemblies to see where they agree/differ
         nucmer \
             --prefix={params.prefix} \
             --breaklen=1000 \
@@ -233,6 +244,7 @@ rule nucmer_flye_vs_hifiasm:
         """
 
 
+# Visualize Flye vs Hifiasm comparison
 rule mummerplot_flye_vs_hifiasm:
     input:
         delta="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/nucmer/flye_vs_hifiasm/flye_vs_hifiasm.delta",

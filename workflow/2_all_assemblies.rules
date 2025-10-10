@@ -21,15 +21,15 @@ rule flye_assembly:
     shell:
         """
         mkdir -p /data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye
+
+        # Run flye with HiFi mode
         flye \
             --threads {threads} \
             --pacbio-hifi {input} \
             --out-dir /data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/flye
         
         touch {output}
-        """
-
-# rule for awk to fasta awk '/^S/{print ">"$2;print $3}' "$OUTDIR/HiFias.asm.bp.p_ctg.gfa" > "$OUTDIR/HiFiasmPrimary.fa"            
+        """        
 
 rule hifiasm_assembly:
     input: 
@@ -40,12 +40,13 @@ rule hifiasm_assembly:
         outdir="/data/users/ltucker/A_thaliana_Taz-0_assembly/output/assemblies/hifiasm"
     resources:
         time="1-00:00:00",
-        mem_mb=128000
+        mem_mb=128000 # hifiasm has memiry issue, add lots of mem
     threads: 24
     shell:
         """
         mkdir -p {params.outdir}
 
+        # apptainer issue when running through snakemake, run directly in shell
         apptainer exec --bind /data /containers/apptainer/hifiasm_0.25.0.sif hifiasm \
             -o "{params.outdir}/ERR11437344.asm" \
             -t {threads} \
@@ -70,6 +71,7 @@ rule LJA_assembly:
         """
         mkdir -p {params.outdir}
         
+        # Run LJA assembler
         lja -o {params.outdir} \
                 --reads {input} \
                 --threads {threads}
@@ -93,7 +95,10 @@ rule trinity_assembly:
         """
         mkdir -p {params.outdir}
 
+        # Load Trinity module from cluster
         module load Trinity/2.15.1-foss-2021a
+
+        # Run Trinity on paired-end RNA reads
         Trinity \
             --seqType fq \
             --left {input.forward_read} \
@@ -102,7 +107,7 @@ rule trinity_assembly:
             --max_memory 64G \
             --output {params.outdir}
         
-
+        # Clean up module and mark as done
         module unload Trinity/2.15.1-foss-2021a
         touch {output}
         """
